@@ -1,0 +1,11 @@
+{
+    "addon_id": "speaktome@mozilla.com",
+    "states": [
+        "recommended"
+    ],
+    "validity": {
+        "not_after": "2024-07-09T02:22:45Z",
+        "not_before": "2019-07-09T20:22:45Z"
+    },
+    "schema_version": 1
+}

@@ -1,0 +1,60 @@
+{
+  "manifest_version": 2,
+  "name": "VRStore-Voice",
+  "version": "1.0.0",
+  "description": "Used for speech recognition for vr-store. Live STT conversion using mozilla STT apis",
+  "developer": {
+    "name": "Emerging Technologies Advanced Dev Team",
+    "url": "https://github.com/vinujoseph25/VRStore-Voice"
+  },
+  "icons": {
+    "48": "assets/icon-48.png",
+    "96": "assets/icon-96.png"
+  },
+  "applications": {
+    "gecko": {
+      "id": "vinujoseph25@gmail.com"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www-upc-ch.dev.aem.upc.biz/en/vr-store/"
+      ],
+      "js": [
+        "vendor/bodymovin.js",
+        "metrics.js",
+        "content.js",
+        "vendor/webrtc_vad.js"
+      ],
+      "css": []
+    }
+  ],
+  "background": {
+    "scripts": [
+      "vendor/testpilot-ga.js",
+      "background.js"
+    ]
+  },
+  "options_ui": {
+    "page": "options.html"
+  },
+  "web_accessible_resources": [
+    "CHANGELOG.html",
+    "languages.json",
+    "assets/ff-logo.png",
+    "assets/feedback.svg",
+    "vendor/webrtc_vad.wasm"
+  ],
+  "permissions": [
+    "<all_urls>",
+    "storage"
+  ],
+  "browser_action": {
+    "browser_style": true,
+    "default_title": "VRStore-Voice",
+    "default_icon": {
+      "32": "mic.svg"
+    }
+  }
+}

@@ -5,7 +5,7 @@
 let LANGUAGES = {};
 let LANGUAGE;
 let sttApi = "Google"; //or Mozilla
-const sttApiKey = "AIzaSyCS8ClSVkV44I_eociznVQMM2WLLAfGNU8";
+const sttApiKey = "<<API Key>>";
 
 const languagePromise = fetch(browser.extension.getURL("languages.json"))
   .then(response => {

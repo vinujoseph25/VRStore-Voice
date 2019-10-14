@@ -4,6 +4,8 @@
 
 let LANGUAGES = {};
 let LANGUAGE;
+let sttApi = "Mozilla";
+const sttApiKey = "AIzaSyCS8ClSVkV44I_eociznVQMM2WLLAfGNU8";
 
 const languagePromise = fetch(browser.extension.getURL("languages.json"))
   .then(response => {
@@ -38,7 +40,15 @@ const languagePromise = fetch(browser.extension.getURL("languages.json"))
 
   let mediaRecorder = null;
   const metrics = new Metrics();
-  const STT_SERVER_URL = "https://speaktome-2.services.mozilla.com";
+  const GOOGLE_STT_SERVER_URL =
+    "https://speech.googleapis.com/v1/speech:recognize";
+  const MOZILLA_STT_SERVER_URL = "https://speaktome-2.services.mozilla.com";
+  let STT_SERVER_URL;
+  if (sttApi === "Google") {
+    STT_SERVER_URL = GOOGLE_STT_SERVER_URL + "?key=" + sttApiKey;
+  } else {
+    STT_SERVER_URL = MOZILLA_STT_SERVER_URL;
+  }
 
   const escapeHTML = str => {
     // Note: string cast using String; may throw if `str` is non-serializable, e.g. a Symbol.
@@ -377,40 +387,64 @@ const languagePromise = fetch(browser.extension.getURL("languages.json"))
             type: "audio/ogg; codecs=opus"
           });
           chunks = [];
+          var body, headers;
 
-          metrics.start_stt();
-          fetch(STT_SERVER_URL, {
-            method: "POST",
-            body: blob,
-            headers: {
-              "Accept-Language-STT": LANGUAGE,
-              "Product-Tag": "vf"
-            }
-          })
-            .then(response => {
-              if (!response.ok) {
-                fail_gracefully(`Fetch error: ${response.statusText}`);
+          function finalBase64(res) {
+            body = JSON.stringify({
+              audio: {
+                content: res
+              },
+              config: {
+                encoding: "OGG_OPUS",
+                sampleRateHertz: 48000,
+                languageCode: "en-US"
               }
-              metrics.end_stt();
-              return response.json();
+            });
+            headers = {
+              "Content-Type": "application/json"
+            };
+            stt_fetch_api(body, headers);
+          }
+
+          function stt_fetch_api(body, headers) {
+            fetch(STT_SERVER_URL, {
+              method: "POST",
+              body: body,
+              headers: headers
             })
-            .then(json => {
-              if (SpeakToMePopup.cancelFetch) {
-                SpeakToMePopup.cancelFetch = false;
-                return;
-              }
-              console.log(`Got STT result: ${JSON.stringify(json)}`);
-              const container = document.getElementById("stm-box");
-              container.classList.add("stm-done-animation");
-              setTimeout(() => {
-                if (json.status === "ok") {
+              .then(response => {
+                if (!response.ok) {
+                  fail_gracefully(`Fetch error: ${response.statusText}`);
+                }
+                metrics.end_stt();
+                return response.json();
+              })
+              .then(json => {
+                if (SpeakToMePopup.cancelFetch) {
+                  SpeakToMePopup.cancelFetch = false;
+                  return;
+                }
+                console.log(`Got STT result: ${JSON.stringify(json)}`);
+                if (sttApi === "Google") {
+                  display_options(json.results);
+                } else {
                   display_options(json.data);
                 }
-              }, 500);
-            })
-            .catch(error => {
-              fail_gracefully(`Fetch error: ${error}`);
-            });
+              })
+              .catch(error => {
+                fail_gracefully(`Fetch error: ${error}`);
+              });
+          }
+          if (sttApi === "Google") {
+            blobToBase64(blob, finalBase64);
+          } else {
+            headers = {
+              "Accept-Language-STT": LANGUAGE,
+              "Product-Tag": "vf"
+            };
+            stt_fetch_api(blob, headers);
+          }
+          metrics.start_stt();
         };
 
         mediaRecorder.ondataavailable = e => {
@@ -510,17 +544,30 @@ const languagePromise = fetch(browser.extension.getURL("languages.json"))
 
   const display_options = items => {
     // Filter the array for empty items and normalize the text.
-    const data = items
-      .filter(item => {
-        return item.text !== "";
-      })
-      .map(item => {
-        return {
-          confidence: item.confidence,
-          text: item.text.toLowerCase()
-        };
-      });
-
+    let data;
+    if (sttApi === "Google") {
+      data = items
+        .filter(item => {
+          return item.alternatives[0].transcript !== "";
+        })
+        .map(item => {
+          return {
+            confidence: item.alternatives[0].confidence,
+            text: item.alternatives[0].transcript.toLowerCase()
+          };
+        });
+    } else {
+      data = items
+        .filter(item => {
+          return item.text !== "";
+        })
+        .map(item => {
+          return {
+            confidence: item.confidence,
+            text: item.text.toLowerCase()
+          };
+        });
+    }
     if (data.length === 0) {
       fail_gracefully(`EMPTYRESULTS`);
       return;
@@ -841,4 +888,14 @@ Module.noInitialRun = true;
 Module["onRuntimeInitialized"] = function() {
   stm_vad = new SpeakToMeVad();
   Module.setStatus("Webrtc_vad and SpeakToMeVad loaded");
+};
+
+var blobToBase64 = function(blob, callback) {
+  var reader = new window.FileReader();
+  reader.onloadend = function() {
+    var dataUrl = reader.result;
+    var base64 = dataUrl.split(",")[1];
+    callback(base64);
+  };
+  reader.readAsDataURL(blob);
 };

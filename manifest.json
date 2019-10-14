@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "VRStore-Voice",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Used for speech recognition for vr-store. Live STT conversion using mozilla STT apis",
   "developer": {
     "name": "Emerging Technologies Advanced Dev Team",

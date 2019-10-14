@@ -9,7 +9,7 @@ const analytics = new TestPilotGA({
   ds: 'addon',
   an: 'VRStore-Voice',
   aid: 'vrstore@mozilla.com',
-  av: '1.0.1'
+  av: '1.0.2'
 });
 
 browser.runtime.onMessage.addListener(event => {
